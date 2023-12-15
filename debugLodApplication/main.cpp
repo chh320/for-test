@@ -37,9 +37,11 @@ int main()
     Parser::Datas2OpenGL ge = t.read_datas2OpenGL_from_binary(is, the_c_edge_indices, the_face_area, the_f_ver_indices, the_face_nums_in_comp, the_collision_pairs);
     
     timer.reset();
-    std::vector <Core::VirtualMesh> vmeshes(ge.storeys_component_id.size());
+    auto& compIndices = ge.search_m;
+    auto& storyCompIndices = ge.storeys_component_id;
 
-    /*Core::Mesh mesh;
+    /*// Gen total mesh lod ----------------------------------------------------------------
+    Core::Mesh mesh;
     std::cout << ge.verts.size() << " " << ge.vert_indices.size() << "\n";
     mesh.vertices.resize(ge.verts.size() / 3);
     for (int i = 0; i < ge.verts.size() / 3; i++) {
@@ -52,8 +54,8 @@ int main()
     }
     vmeshes[0].Build(mesh);*/
 
-    auto& compIndices = ge.search_m;
-    auto& storyCompIndices = ge.storeys_component_id;
+    /*// Gen lod with stories ----------------------------------------------------------------
+    std::vector <Core::VirtualMesh> vmeshes(ge.storeys_component_id.size());
     for (auto storyId = 0; storyId < vmeshes.size(); storyId++) {
         Core::Mesh mesh;
         int cnt = 0;
@@ -65,9 +67,30 @@ int main()
             }
         }
         std::cout << mesh.vertices.size() << " " << mesh.indices.size() << "\n";
-        
+
         vmeshes[storyId].Build(mesh);
+    }*/
+
+    // Gen lod with component ----------------------------------------------------------------
+    uint32_t triThreshold = 64;
+    std::vector<uint32_t> largeCompId;
+    for (auto compId = 0; compId < compIndices.size() && largeCompId.size() < 1000; compId++) {
+        if (compIndices[compId].size() > triThreshold * 3) largeCompId.push_back(compId);
     }
+    std::vector <Core::VirtualMesh> vmeshes(100);
+    for (int i = 900; i < largeCompId.size(); i++) {
+        auto compId = largeCompId[i];
+        Core::Mesh mesh;
+        int cnt = 0;
+        for (auto id : compIndices[compId]) {
+            mesh.vertices.emplace_back(ge.verts[id * 3 + 0], ge.verts[id * 3 + 1], ge.verts[id * 3 + 2]);
+            mesh.indices.push_back(cnt++);
+        }
+        std::cout << mesh.vertices.size() << " " << mesh.indices.size() << "\n";
+
+        vmeshes[i - 900].Build(mesh);
+    }
+
     timer.log("Success generate virtual mesh");
     Core::Encode::PackingMeshData(modelFileName, vmeshes, packedData);
 

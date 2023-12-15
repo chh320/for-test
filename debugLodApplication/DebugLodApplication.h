@@ -144,6 +144,7 @@ namespace Vk {
         UniformBuffers _ubo;
 
         float _modelScale;
+        glm::vec3 _modelMove;
 
         struct {
             bool lDown = false, rDown = false;

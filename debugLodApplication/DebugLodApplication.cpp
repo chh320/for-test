@@ -86,11 +86,14 @@ void DebugLodApplication::CreateCamera()
 void DebugLodApplication::CreateInstanceBuffers(std::vector<uint32_t>& packedData)
 {
 
-    uint32_t firstClustersNum   = packedData[0];
-    uint32_t firstGroupsNum     = packedData[1];
-    _MipLevelNum                = packedData[4 + 20 * firstClustersNum - 1] + 1;
-    float radius                = std::abs(Util::Uint2Float(packedData[packedData[2] + 8 * (firstGroupsNum - 1) + 7]));
+    uint32_t firstMeshClustersNum   = packedData[0];
+    uint32_t firstMeshGroupsNum     = packedData[1];
+    _MipLevelNum                = packedData[4 + 20 * firstMeshClustersNum - 1] + 1;
+    uint32_t groupBoundOffset   = packedData[2] + 8 * (firstMeshGroupsNum - 1) + 4;
+    glm::vec3 center            = glm::vec3(Util::Uint2Float(packedData[groupBoundOffset + 0]), Util::Uint2Float(packedData[groupBoundOffset + 1]), Util::Uint2Float(packedData[groupBoundOffset + 2]));
+    float radius                = std::abs(Util::Uint2Float(packedData[groupBoundOffset + 3]));
     _modelScale                 = pow(10, -std::floor(std::log10(radius)));
+    _modelMove                  = -center;
     // std::cout << radius << " " << _modelScale << "\n";
 
     int imageCnt = _swapchain->GetImageCount();
@@ -316,6 +319,7 @@ void DebugLodApplication::UpdateUniformBuffers(uint32_t imageId)
 {
     glm::mat4 model = glm::mat4(1.f);
     model = glm::scale(model, glm::vec3(_modelScale));
+    model = glm::translate(model, _modelMove);
     glm::mat4 view = _camera->getViewMatrix();
     glm::mat4 proj = _camera->getProjMatrix();
 

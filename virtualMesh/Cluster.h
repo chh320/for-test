@@ -14,7 +14,7 @@
 namespace Core {
 	class Cluster final {
 	public:
-		static const uint32_t clusterSize = 128;
+		static const uint32_t clusterSize = 32;
 
 		std::vector<glm::vec3> verts;
 		std::vector<uint32_t> indices;
